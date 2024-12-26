@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Time Capsule</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            text-align: center;
+            color: #555;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .info-section p {
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Blockchain Time Capsule</h1>
+        <p>Store and retrieve messages for the future!</p>
+        
+        <!-- Form to store a message -->
+        <div class="form-section">
+            <h2>Store a Message</h2>
+            <label for="message">Message:</label>
+            <input type="text" id="message" placeholder="Enter your message" required>
+
+            <label for="unlockTime">Unlock Time (Epoch):</label>
+            <input type="number" id="unlockTime" placeholder="Enter future timestamp" required>
+            
+            <button onclick="storeMessage()">Store Message</button>
+        </div>
+
+        <!-- Retrieve a Message -->
+        <div class="form-section">
+            <h2>Retrieve a Message</h2>
+            <label for="capsuleId">Capsule ID:</label>
+            <input type="number" id="capsuleId" placeholder="Enter Capsule ID" required>
+            
+            <button onclick="retrieveMessage()">Retrieve Message</button>
+            <p id="retrievedMessage"></p>
+        </div>
+
+        <!-- Total Capsules -->
+        <div class="info-section">
+            <h2>Total Messages</h2>
+            <button onclick="getTotalCapsules()">Get Total Capsules</button>
+            <p id="totalCapsules"></p>
+        </div>
+    </div>
+
+    <script>
+        // Smart Contract ABI and Address
+        const CONTRACT_ABI =   [
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "capsuleId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "message",
+				"type": "string"
+			}
+		],
+		"name": "MessageRetrieved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "capsuleId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "unlockTime",
+				"type": "uint256"
+			}
+		],
+		"name": "MessageStored",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "capsules",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "message",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "unlockTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "retrieved",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_capsuleId",
+				"type": "uint256"
+			}
+		],
+		"name": "getCapsuleDetails",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTotalCapsules",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "getUserCapsules",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_capsuleId",
+				"type": "uint256"
+			}
+		],
+		"name": "retrieveMessage",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_message",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_unlockTime",
+				"type": "uint256"
+			}
+		],
+		"name": "storeMessage",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "userCapsules",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+        const CONTRACT_ADDRESS = "0xB38407Ca9882bCa9A63c78B539997d41677b068b"; // Replace with your deployed 
+
+        let web3;
+        let contract;
+
+        // Initialize web3 and contract
+        async function init() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                console.log("Contract initialized!");
+            } else {
+                alert("Please install MetaMask to use this app.");
+            }
+        }
+
+        // Store a message
+        async function storeMessage() {
+            const message = document.getElementById("message").value;
+            const unlockTime = document.getElementById("unlockTime").value;
+
+            if (!message || !unlockTime) {
+                alert("Please enter a message and a valid future timestamp.");
+                return;
+            }
+
+            try {
+                const accounts = await web3.eth.getAccounts();
+                await contract.methods.storeMessage(message, unlockTime).send({ from: accounts[0] });
+                alert("Message stored successfully!");
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while storing the message.");
+            }
+        }
+
+        // Retrieve a message
+        async function retrieveMessage() {
+            const capsuleId = document.getElementById("capsuleId").value;
+
+            if (!capsuleId) {
+                alert("Please enter a valid Capsule ID.");
+                return;
+            }
+
+            try {
+                const accounts = await web3.eth.getAccounts();
+                const message = await contract.methods.retrieveMessage(capsuleId).call({ from: accounts[0] });
+                document.getElementById("retrievedMessage").innerText = `Retrieved Message: ${message}`;
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while retrieving the message. Make sure the time has passed.");
+            }
+        }
+
+        // Get total capsules
+        async function getTotalCapsules() {
+            try {
+                const total = await contract.methods.getTotalCapsules().call();
+                document.getElementById("totalCapsules").innerText = `Total Messages: ${total}`;
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while fetching the total capsules.");
+            }
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
